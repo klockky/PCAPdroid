@@ -19,6 +19,23 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
+    - name: Setup release signing (if secrets are present)
+      env:
+        KEYSTORE_B64: ${{ secrets.RELEASE_KEYSTORE_B64 }}
+        KEYSTORE_PW: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+        KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+        KEY_PW: ${{ secrets.RELEASE_KEY_PASSWORD }}
+      run: |
+        if [ -n "$KEYSTORE_B64" ]; then
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          echo "RELEASE_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+          echo "RELEASE_KEYSTORE_PASSWORD=$KEYSTORE_PW" >> "$GITHUB_ENV"
+          echo "RELEASE_KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "RELEASE_KEY_PASSWORD=$KEY_PW" >> "$GITHUB_ENV"
+        else
+          echo "No keystore secret — building unsigned APK"
+        fi
+
     - name: Build standardRelease APK
       run: ./gradlew :app:assembleStandardRelease
 

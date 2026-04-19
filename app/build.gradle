@@ -30,10 +30,24 @@ android {
         }
     }
 
+    signingConfigs {
+        release {
+            def ksPath = System.getenv("RELEASE_KEYSTORE_PATH")
+            if (ksPath != null) {
+                storeFile file(ksPath)
+                storePassword System.getenv("RELEASE_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("RELEASE_KEY_ALIAS")
+                keyPassword System.getenv("RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (System.getenv("RELEASE_KEYSTORE_PATH") != null)
+                signingConfig signingConfigs.release
         }
         debug {
             // Use a different app ID for debug to allow its coexistence with release builds
