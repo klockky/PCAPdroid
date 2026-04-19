@@ -488,6 +488,38 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.PayloadV
         }
     }
 
+    public boolean hasAnyChunks() {
+        return !mChunks.isEmpty();
+    }
+
+    public String dumpAllChunks(boolean asPrintable) {
+        if (mChunks.isEmpty())
+            return "";
+
+        Locale locale = Utils.getPrimaryLocale(mContext);
+        SimpleDateFormat tsFmt = new SimpleDateFormat("HH:mm:ss.SSS", locale);
+        StringBuilder sb = new StringBuilder();
+
+        for (AdapterChunk aChunk : mChunks) {
+            PayloadChunk chunk = aChunk.getPayloadChunk();
+            String ts = tsFmt.format(new Date(chunk.timestamp));
+            String bytes = (mMode == ChunkType.HTTP)
+                    ? Utils.formatBytes(chunk.httpBodyLength)
+                    : Utils.formatBytes(chunk.payload.length);
+
+            sb.append("================================================================\n");
+            sb.append(String.format(locale, "# Chunk #%d [%s] %s — %s\n",
+                    aChunk.incrId + 1, getHeaderTag(chunk), ts, bytes));
+            sb.append("================================================================\n");
+            sb.append(aChunk.getExpandedText(asPrintable));
+            if (sb.length() > 0 && sb.charAt(sb.length() - 1) != '\n')
+                sb.append('\n');
+            sb.append('\n');
+        }
+
+        return sb.toString();
+    }
+
     private String getHeaderTag(PayloadChunk chunk) {
         if(mMode == ChunkType.HTTP)
             return (chunk.is_sent) ? mContext.getString(R.string.request) : mContext.getString(R.string.response);

@@ -233,6 +233,8 @@
     <string name="full_payload">Показывать полное содержимое</string>
     <string name="decode_max_protocol">Декодировать протокол MAX</string>
     <string name="decode_max_protocol_summary">Автоматически разбирать сырые TCP-пейлоады протокола мессенджера MAX (10-байтовый заголовок + msgpack или LZ4-сжатый msgpack) в читаемый JSON</string>
+    <string name="save_all">Сохранить всё</string>
+    <string name="save_all_dialog_title">Сохранить все чанки как…</string>
     <string name="network_traffic">Трафик</string>
     <string name="warn_no_app_data">Обмена прикладными данными не было</string>
     <string name="geolocation">Геолокация</string>

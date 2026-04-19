@@ -74,6 +74,7 @@ public class ConnectionDetailsActivity extends PayloadExportActivity implements 
     private MenuItem mMenuCopy;
     private MenuItem mMenuShare;
     private MenuItem mMenuDisplayAs;
+    private MenuItem mMenuSaveAll;
     private Boolean mDisplayMode;
 
     private static final int POS_OVERVIEW = 0;
@@ -334,6 +335,7 @@ public class ConnectionDetailsActivity extends PayloadExportActivity implements 
         mMenuCopy = menu.findItem(R.id.copy_to_clipboard);
         mMenuShare = menu.findItem(R.id.share);
         mMenuDisplayAs = menu.findItem(R.id.display_as);
+        mMenuSaveAll = menu.findItem(R.id.save_all);
 
         updateNavigationButtons();
         updateMenuVisibility();
@@ -366,7 +368,7 @@ public class ConnectionDetailsActivity extends PayloadExportActivity implements 
     }
 
     public void updateMenuVisibility() {
-        if(mMenuCopy == null || mMenuShare == null || mMenuDisplayAs == null)
+        if(mMenuCopy == null || mMenuShare == null || mMenuDisplayAs == null || mMenuSaveAll == null)
             return;
 
         int currentTab = mPager.getCurrentItem();
@@ -379,6 +381,7 @@ public class ConnectionDetailsActivity extends PayloadExportActivity implements 
 
         boolean isPayload = (currentPos == POS_WEBSOCKET || currentPos == POS_HTTP || currentPos == POS_RAW_PAYLOAD);
         mMenuDisplayAs.setVisible(isPayload);
+        mMenuSaveAll.setVisible(isPayload);
 
         if(isPayload) {
             Fragment currentFragment = getCurrentFragment();
@@ -413,9 +416,37 @@ public class ConnectionDetailsActivity extends PayloadExportActivity implements 
                 updateMenuVisibility();
             }
             return true;
+        } else if(itemId == R.id.save_all) {
+            promptSaveAll();
+            return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void promptSaveAll() {
+        Fragment current = getCurrentFragment();
+        if(!(current instanceof ConnectionPayload payloadFragment))
+            return;
+        if(!payloadFragment.hasAnyChunks())
+            return;
+
+        String[] choices = {
+                getString(R.string.text),
+                getString(R.string.hexdump),
+        };
+
+        int preselect = (mDisplayMode != null && mDisplayMode) ? 0 : 1;
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle(R.string.save_all_dialog_title)
+                .setSingleChoiceItems(choices, preselect, (d, i) -> {})
+                .setNeutralButton(R.string.cancel_action, (d, i) -> {})
+                .setPositiveButton(R.string.export_action, (d, i) -> {
+                    int choice = ((androidx.appcompat.app.AlertDialog) d).getListView().getCheckedItemPosition();
+                    payloadFragment.dumpAllChunks(choice == 0);
+                })
+                .show();
     }
 
     private Fragment getCurrentFragment() {

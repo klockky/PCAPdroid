@@ -198,6 +198,19 @@ public class ConnectionPayload extends Fragment implements PayloadHostActivity.C
             mAdapter.setDisplayAsPrintableText(showAsPrintable);
     }
 
+    public boolean hasAnyChunks() {
+        return (mAdapter != null) && mAdapter.hasAnyChunks();
+    }
+
+    public void dumpAllChunks(boolean asPrintable) {
+        if ((mAdapter == null) || (mActivity == null))
+            return;
+        String dump = mAdapter.dumpAllChunks(asPrintable);
+        if (dump.isEmpty())
+            return;
+        mActivity.exportPayload(dump);
+    }
+
     public boolean guessDisplayAsPrintable() {
         if (mConn == null)
             return false;
