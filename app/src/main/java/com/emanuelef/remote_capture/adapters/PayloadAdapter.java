@@ -30,6 +30,7 @@ import android.widget.TextView;
 import androidx.annotation.CheckResult;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
+import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.emanuelef.remote_capture.CaptureService;
@@ -44,6 +45,7 @@ import com.emanuelef.remote_capture.model.PayloadChunk.ChunkType;
 import com.emanuelef.remote_capture.model.Prefs;
 import com.google.android.material.button.MaterialButton;
 
+import com.emanuelef.remote_capture.MaxProtocolDecoder;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
@@ -168,6 +170,8 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.PayloadV
         private String mTheText;
         private boolean mIsExpanded;
         private int mNumPages = 1;
+        private boolean mMaxDecodeChecked;
+        private String mMaxDecodeJson;
         public final int incrId;
 
         AdapterChunk(PayloadChunk _chunk, int incr_id) {
@@ -176,7 +180,14 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.PayloadV
         }
 
         boolean canBeExpanded() {
-            return mChunk.payload.length > COLLAPSE_CHUNK_SIZE;
+            if (mChunk.payload.length > COLLAPSE_CHUNK_SIZE)
+                return true;
+            if (mShowAsPrintable && (mMode == ChunkType.RAW)) {
+                String decoded = getMaxDecodedJson();
+                if ((decoded != null) && (decoded.length() > COLLAPSE_CHUNK_SIZE))
+                    return true;
+            }
+            return false;
         }
 
         boolean isExpanded() {
@@ -193,12 +204,31 @@ public class PayloadAdapter extends RecyclerView.Adapter<PayloadAdapter.PayloadV
 
         @CheckResult
         private String makeText(boolean as_printable, boolean expanded) {
+            if (as_printable && (mMode == ChunkType.RAW)) {
+                String decoded = getMaxDecodedJson();
+                if (decoded != null) {
+                    if (!expanded && (decoded.length() > COLLAPSE_CHUNK_SIZE))
+                        return decoded.substring(0, COLLAPSE_CHUNK_SIZE);
+                    return decoded;
+                }
+            }
+
             int dump_len = expanded ? mChunk.payload.length : Math.min(mChunk.payload.length, COLLAPSE_CHUNK_SIZE);
 
             if(!as_printable)
                 return Utils.hexdump(mChunk.payload, 0, dump_len);
             else
                 return new String(mChunk.payload, 0, dump_len, StandardCharsets.UTF_8);
+        }
+
+        private String getMaxDecodedJson() {
+            if (mMaxDecodeChecked)
+                return mMaxDecodeJson;
+            mMaxDecodeChecked = true;
+            if (!Prefs.isMaxProtocolDecodingEnabled(PreferenceManager.getDefaultSharedPreferences(mContext)))
+                return null;
+            mMaxDecodeJson = MaxProtocolDecoder.tryDecode(mChunk.payload);
+            return mMaxDecodeJson;
         }
 
         @CheckResult
